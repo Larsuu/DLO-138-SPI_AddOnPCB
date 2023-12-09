@@ -4,7 +4,7 @@
 // needs to be Adafruit GFX Library v1.1.4, check/change your installed version
 // otherwise you will get a black screen or compiler errors
 
-#include "src/TFTLib/Adafruit_TFTLCD_8bit_STM32.h"
+#include <Adafruit_ILI9341.h>
 #include "global.h"
 #include "variables.h"
 
@@ -20,6 +20,10 @@ void setup()	{
 	
 	
 	DBG_INIT(SERIAL_BAUD_RATE);
+  for (int i = 0; i < 40; ++i) {
+    if (Serial) break;
+    delay(100);
+  }
 	DBG_PRINT("Dual channel O Scope with two logic channels, ver: ");
 	DBG_PRINTLN(FIRMWARE_VERSION);
 
@@ -40,5 +44,3 @@ void loop()	{
 // ------------------------
 	controlLoop();
 }
-
-

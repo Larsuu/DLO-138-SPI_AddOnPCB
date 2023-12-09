@@ -1,5 +1,5 @@
 
-enum { TRIGGER_AUTO, TRIGGER_NORM, TRIGGER_SINGLE };
+//enum { TRIGGER_AUTO, TRIGGER_NORM, TRIGGER_SINGLE };
 uint8_t triggerType;
 
 

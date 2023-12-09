@@ -93,5 +93,3 @@ void readBSwitchISR()	{
 	
 	encoderChanged(1);
 }
-
-

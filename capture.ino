@@ -1,6 +1,6 @@
 
 // sampling delay table in quarter-microseconds
-const int16_t samplingDelay[] =   {-1,  0, 14, 38, 86, 229, 468, 948, 2385, 4776, 9570, 23940};
+const int16_t samplingDelay[] =   {-1, 5, 14, 33, 81, 178, 465, 946, 1910, 4776, 9570, 19163};
 const uint16_t timeoutDelayMs[] = {50, 50, 50, 100, 100, 100, 150, 250, 500, 1000, 2000, 4500};
 
 int16_t sDly, tDly;
@@ -18,6 +18,7 @@ volatile boolean *triggeredPtr = &triggered;
 // ------------------------
 void setSamplingRate(uint8_t timeBase)	{
 // ------------------------
+  adc_set_speed();
 	sDly = samplingDelay[timeBase];
 	tDly = timeoutDelayMs[timeBase];
 	// sampling rate changed, break out from previous sampling loop
@@ -35,11 +36,11 @@ void setTriggerRising(boolean rising)	{
 	keepSampling = false;
 	triggerRising = rising;
 	// attach interrupt to trigger pin
-	detachInterrupt(TRIGGER_IN);
-	if(rising)
-		attachInterrupt(TRIGGER_IN, triggerISR, RISING);
-	else
-		attachInterrupt(TRIGGER_IN, triggerISR, FALLING);
+//	detachInterrupt(TRIGGER_IN);
+//	if(rising)
+//		attachInterrupt(TRIGGER_IN, triggerISR, RISING);
+//	else
+//		attachInterrupt(TRIGGER_IN, triggerISR, FALLING);
 }
 
 
@@ -155,6 +156,7 @@ void startSampling(int16_t lDelay)	{
 	// clear old dataset
 	samplingTime = 0;
 	triggered = false;
+  triggered = findTrigger();
 	sIndex = 0;
 	
 	prevTime = micros();
@@ -205,7 +207,7 @@ void startSampling(int16_t lDelay)	{
 			: 
 			: [keepSampling] "r" (keepSamplingPtr), [sIndex] "r" (sIndexPtr), [triggered] "r" (triggeredPtr), 
 				[ch1] "r" (ch1Capture), [ch2] "r" (ch2Capture), [dCH] "r" (bitStore), [lCtr] "r" (lCtr),
-				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES/2),
+				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES),
 				[snapMicros] "i" (snapMicros)
 			: "r0", "r1", "r9", "memory", "cc"
 		);		
@@ -267,7 +269,7 @@ void startSampling(int16_t lDelay)	{
 			: 
 			: [keepSampling] "r" (keepSamplingPtr), [sIndex] "r" (sIndexPtr), [triggered] "r" (triggeredPtr), 
 				[ch1] "r" (ch1Capture), [ch2] "r" (ch2Capture), [dCH] "r" (bitStore), [lCtr] "r" (lCtr),
-				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES/2),
+				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES),
 				[snapMicros] "i" (snapMicros)
 			: "r0", "r1", "r9", "memory", "cc"
 		);		
@@ -334,7 +336,7 @@ void startSampling(int16_t lDelay)	{
 			: 
 			: [keepSampling] "r" (keepSamplingPtr), [sIndex] "r" (sIndexPtr), [triggered] "r" (triggeredPtr), 
 				[ch1] "r" (ch1Capture), [ch2] "r" (ch2Capture), [dCH] "r" (bitStore), [lCtr] "r" (lCtr),
-				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES/2), [tDelay] "r" (lDelay),
+				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES), [tDelay] "r" (lDelay),
 				[snapMicros] "i" (snapMicros)
 			: "r0", "r1", "r9", "memory", "cc"
 		);		
@@ -442,3 +444,61 @@ void printSample(uint16_t k, float timeStamp) {
 	DBG_PRINTLN();
 }
 
+enum { TRIGGER_AUTO, TRIGGER_NORM, TRIGGER_SINGLE };
+
+bool findTrigger() {
+  int oad, ad;
+  unsigned long auto_time;
+  extern uint8_t triggerType;
+
+  int trigger_ad = getTriggerLevel() + 2048;
+//  Serial.println(trigger_ad);
+  auto_time = 100;  // pow(10, rate / 3) + 5;
+  unsigned long st = millis();
+  oad = analogRead(PA0);
+  while (keepSampling) {
+    ad = analogRead(PA0);
+    if (triggerRising) {
+      if (ad > trigger_ad && trigger_ad > oad)
+        break;
+    } else {
+      if (ad < trigger_ad && trigger_ad < oad)
+        break;
+    }
+    oad = ad;
+    if (triggerType == TRIGGER_AUTO && (millis() - st) > auto_time)
+      break; 
+  }
+  return true;
+}
+
+void adc_set_speed(void) {
+  if (currentTimeBase < T30US)
+    adc_speed_fastest();
+  else if (currentTimeBase < T50US) {
+    adc_set_prescaler(ADC_PRE_PCLK2_DIV_4);
+    adc_set_sample_rate(PIN_MAP[PA0].adc_device,ADC_SMPR_7_5);
+    adc_set_sample_rate(PIN_MAP[PA1].adc_device,ADC_SMPR_7_5);
+  } else if (currentTimeBase < T1MS)
+    adc_speed_fast();
+  else
+    adc_speed_normal();
+}
+
+void adc_speed_normal(void) {
+  adc_set_prescaler(ADC_PRE_PCLK2_DIV_6);
+  adc_set_sample_rate(PIN_MAP[PA0].adc_device,ADC_SMPR_55_5);
+  adc_set_sample_rate(PIN_MAP[PA1].adc_device,ADC_SMPR_55_5);
+}
+
+void adc_speed_fast(void) {
+  adc_set_prescaler(ADC_PRE_PCLK2_DIV_6);
+  adc_set_sample_rate(PIN_MAP[PA0].adc_device,ADC_SMPR_7_5);
+  adc_set_sample_rate(PIN_MAP[PA1].adc_device,ADC_SMPR_7_5);
+}
+
+void adc_speed_fastest(void) {
+  adc_set_prescaler(ADC_PRE_PCLK2_DIV_2);
+  adc_set_sample_rate(PIN_MAP[PA0].adc_device,ADC_SMPR_1_5);
+  adc_set_sample_rate(PIN_MAP[PA1].adc_device,ADC_SMPR_1_5);
+}

@@ -90,8 +90,10 @@ void resetParam()	{
 			repaintLabels();
 			break;
 		case L_window:
-			// set x in the middle
-			changeXCursor((NUM_SAMPLES - GRID_WIDTH)/2);
+//      // set x in the middle
+//      changeXCursor((NUM_SAMPLES - GRID_WIDTH)/2);
+      // set x at the top
+      changeXCursor(0);
 			break;
 		case L_vPos1:
 			// zero the trace base
@@ -214,7 +216,7 @@ void encoderChanged(int steps)	{
 void incrementTLevel()	{
 // ------------------------
 	int16_t tL = getTriggerLevel();
-	setTriggerLevel(tL + 5);
+	setTriggerLevel(tL + 32);
 	saveParameter(PARAM_TLEVEL, tL);
 	repaintLabels();
 }
@@ -225,7 +227,7 @@ void incrementTLevel()	{
 void decrementTLevel()	{
 // ------------------------
 	int16_t tL = getTriggerLevel();
-	setTriggerLevel(tL - 5);
+	setTriggerLevel(tL - 32);
 	saveParameter(PARAM_TLEVEL, tL);
 	repaintLabels();
 }
@@ -236,22 +238,16 @@ void decrementTLevel()	{
 // ------------------------
 void incrementWaves()	{
 // ------------------------
-	// add more waves
-	if(waves[1])	{
-		return;
-	}
-	else if(waves[3])	{
-		waves[1] = true;
-		saveParameter(PARAM_WAVES + 1, waves[1]);
-	}
-	else if(waves[2])	{
-		waves[3] = true;
-		saveParameter(PARAM_WAVES + 3, waves[3]);
-	}
-	else {
-		waves[2] = true;
-		saveParameter(PARAM_WAVES + 2, waves[2]);
-	}
+  int nwaves = waves[1] ? 1 : 0;
+  if (waves[2]) nwaves += 2;
+  if (waves[3]) nwaves += 4;
+  nwaves = (nwaves + 1) & 0x7;  // rotate waves
+	waves[1] = nwaves & 1 ? true : false;
+  waves[2] = nwaves & 2 ? true : false;
+  waves[3] = nwaves & 4 ? true : false;
+	saveParameter(PARAM_WAVES + 1, waves[1]);
+  saveParameter(PARAM_WAVES + 2, waves[2]);
+  saveParameter(PARAM_WAVES + 3, waves[3]);
 
 	repaintLabels();
 }
@@ -342,7 +338,7 @@ void decrementTT()	{
 // ------------------------
 void incrementTimeBase()	{
 // ------------------------
-	if(currentTimeBase == T50MS)
+	if(currentTimeBase == T20MS)
 		return;
 	
 	setTimeBase(currentTimeBase + 1);
@@ -353,7 +349,7 @@ void incrementTimeBase()	{
 // ------------------------
 void decrementTimeBase()	{
 // ------------------------
-	if(currentTimeBase == T20US)
+	if(currentTimeBase == T12US)
 		return;
 	
 	setTimeBase(currentTimeBase - 1);
@@ -413,6 +409,3 @@ void changeXCursor(int16_t xPos)	{
 	saveParameter(PARAM_XCURSOR, xCursor);
 	repaintLabels();
 }
-
-
-

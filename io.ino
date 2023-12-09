@@ -134,38 +134,38 @@ void readInpSwitches()	{
 	// ADC1 and ADC2 are free running at max speed
 	
 	// change to switch 1 
-	ADC1regs->SQR3 = PIN_MAP[VSENSSEL2].adc_channel;
-	delayMicroseconds(100);
-	pos2 = (uint16_t) (ADC1regs->DR & ADC_DR_DATA);
+//	ADC1regs->SQR3 = PIN_MAP[VSENSSEL2].adc_channel;
+//	delayMicroseconds(100);
+//	pos2 = (uint16_t) (ADC1regs->DR & ADC_DR_DATA);
+//	
+//	ADC1regs->SQR3 = PIN_MAP[VSENSSEL1].adc_channel;
+//	delayMicroseconds(100);
+//	pos1 = (uint16_t) (ADC1regs->DR & ADC_DR_DATA);
+//	
+//	ADC1regs->SQR3 = PIN_MAP[CPLSEL].adc_channel;
+//	delayMicroseconds(100);
+//	cpl = (uint16_t) (ADC1regs->DR & ADC_DR_DATA);
 	
-	ADC1regs->SQR3 = PIN_MAP[VSENSSEL1].adc_channel;
-	delayMicroseconds(100);
-	pos1 = (uint16_t) (ADC1regs->DR & ADC_DR_DATA);
-	
-	ADC1regs->SQR3 = PIN_MAP[CPLSEL].adc_channel;
-	delayMicroseconds(100);
-	cpl = (uint16_t) (ADC1regs->DR & ADC_DR_DATA);
-	
-	if(cpl < 400)
-		couplingPos = CPL_GND;
-	else if(cpl < 2000)
-		couplingPos = CPL_AC;
-	else
+//	if(cpl < 400)
+//		couplingPos = CPL_GND;
+//	else if(cpl < 2000)
+//		couplingPos = CPL_AC;
+//	else
 		couplingPos = CPL_DC;
 	
-	if(pos1 < 400)
-		rangePos = RNG_1V;
-	else if(pos1 < 2000)
-		rangePos = RNG_0_1V;
-	else
-		rangePos = RNG_10mV;
+//	if(pos1 < 400)
+		rangePos = RNG_0_5V;
+//	else if(pos1 < 2000)
+//		rangePos = RNG_0_1V;
+//	else
+//		rangePos = RNG_10mV;
 	
-	if(pos2 < 400)
-		rangePos -= 2;
-	else if(pos2 < 2000)
-		rangePos -= 1;
-	else
-		rangePos -= 0;
+//	if(pos2 < 400)
+//		rangePos -= 2;
+//	else if(pos2 < 2000)
+//		rangePos -= 1;
+//	else
+//		rangePos -= 0;
 	
 	// check if switch position changed from previous snap
 	if(couplingPos != couplingOld)	{
@@ -185,4 +185,3 @@ void readInpSwitches()	{
 	ADC1regs->SQR3 = PIN_MAP[AN_CH1].adc_channel;
 	delayMicroseconds(100);
 }
-

@@ -8,8 +8,10 @@ void loadConfig(boolean reset)	{
 // ------------------------
 	DBG_PRINTLN("Loading stored config...");
 
+  eepromsetup();
 	if(EEPROM.init() != EEPROM_OK)	{
 		loadDefaults();
+    formatSaveConfig();
 		return;
 	}
 	
@@ -95,13 +97,13 @@ void loadDefaults()	{
 	setTriggerLevel(0);
 	
 	// set x in the middle
-	xCursor = (NUM_SAMPLES - GRID_WIDTH)/2;
+	xCursor = 0;  // (NUM_SAMPLES - GRID_WIDTH)/2;
  
 	// set y in the middle
-	yCursors[0] = -70;
-	yCursors[1] = -90;
-	yCursors[2] = -110;
-	yCursors[3] = -130;
+	yCursors[0] = -100;
+	yCursors[1] = -125;
+	yCursors[2] = -150;
+	yCursors[3] = -175;
 	
 	// show all waves
 	waves[0] = true;
@@ -111,8 +113,8 @@ void loadDefaults()	{
 	
 	printStats = false;
 	
-	zeroVoltageA1 = 1985;
-	zeroVoltageA2 = 1985;
+	zeroVoltageA1 = 2048;
+	zeroVoltageA2 = 2048;
 }
 
 
@@ -151,10 +153,22 @@ void formatSaveConfig()	{
 // ------------------------
 void saveParameter(uint16_t param, uint16_t data)	{
 // ------------------------
-	uint16 status = EEPROM.write(param, data);
-	if(status != EEPROM_OK)	{
+	uint16 status = EEPROM.update(param, data);
+	if(status != EEPROM_OK && status != EEPROM_SAME_VALUE)	{
 		DBG_PRINT("Unable to save param in EEPROM, code: ");DBG_PRINTLN(status);
 	}
 }
 
-
+void eepromsetup(void) {
+#if 0
+// STM32F103C8T6 flash memory size 64kB
+  EEPROM.PageBase0 = 0x800F800;
+  EEPROM.PageBase1 = 0x800FC00;
+  EEPROM.PageSize = 0x400;
+#else
+// STM32F103C8T6 flash memory size 128kB
+  EEPROM.PageBase0 = 0x801F800;
+  EEPROM.PageBase1 = 0x801FC00;
+  EEPROM.PageSize = 0x400;
+#endif
+}

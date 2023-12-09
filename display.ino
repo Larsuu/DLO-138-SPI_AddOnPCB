@@ -5,14 +5,20 @@
 #define TFT_WIDTH		320
 #define TFT_HEIGHT		240
 #define GRID_WIDTH		300
-#define GRID_HEIGHT		210
+#define GRID_HEIGHT		200
 
 #define GRID_COLOR		0x4208
 #define ADC_MAX_VAL		4096
-#define ADC_2_GRID		800
+//#define ADC_2_GRID		4965    // 1v/div
+#define ADC_2_GRID    2482    // 0.5v/div
+//#define ADC_2_GRID    993    // 0.2v/div
+//#define ADC_2_GRID    497    // 0.1v/div
 
 
-Adafruit_TFTLCD_8bit_STM32 tft;
+#define TFT_CS         PA15
+#define TFT_DC         PB10
+#define TFT_RST        PB11
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST); // Mosi - PA7, SCK - PA5
 
 // rendered waveform data is stored here for erasing
 int16_t ch1Old[GRID_WIDTH] = {0};
@@ -77,8 +83,7 @@ void repaintLabels()	{
 // ------------------------
 void initDisplay()	{
 // ------------------------
-	tft.reset();
-	tft.begin(0x9341);
+	tft.begin();
 	tft.setRotation(LANDSCAPE);
 	tft.fillScreen(ILI9341_BLACK);
 	banner();
@@ -188,6 +193,13 @@ void clearNDrawSignals()	{
 	wavesSnap[1] = waves[1];
 	wavesSnap[2] = waves[2];
 	wavesSnap[3] = waves[3];
+
+  if (couplingPos == CPL_DC) {
+    zeroVoltageA1Snap = 0;
+    zeroVoltageA2Snap = 0;
+    yCursorsSnap[0] = yCursors[0] + GRID_HEIGHT / 2;
+    yCursorsSnap[1] = yCursors[1] + GRID_HEIGHT / 2;
+  }
 
 	// draw the GRID_WIDTH section of the waveform from xCursorSnap
 	int16_t val1, val2;
@@ -511,7 +523,11 @@ void drawLabels()	{
 	
 	// draw trigger level on right side
 	// -----------------
-	int cPos = GRID_HEIGHT + vOffset + yCursors[0] - getTriggerLevel()/3;
+  int cPos;
+  if (couplingPos == CPL_DC)
+    cPos = GRID_HEIGHT + vOffset + yCursors[0] + GRID_HEIGHT / 2 - ((getTriggerLevel()+2048)*GRID_HEIGHT)/ADC_2_GRID;
+  else
+    cPos = GRID_HEIGHT + vOffset + yCursors[0] - (getTriggerLevel()*GRID_HEIGHT)/ADC_2_GRID;
     tft.fillTriangle(TFT_WIDTH, cPos - 5, TFT_WIDTH - hOffset, cPos, TFT_WIDTH, cPos + 5, AN_SIGNAL1);
 	if(currentFocus == L_triggerLevel)
 		tft.drawRect(GRID_WIDTH + hOffset, cPos - 7, hOffset, 14, ILI9341_WHITE);
@@ -536,49 +552,49 @@ void drawStats()	{
 	// draw stat labels
 	tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
 
-	tft.setCursor(25, 20);
+	tft.setCursor(25, 22);
 	tft.print("Freq:");
-	tft.setCursor(25, 30);
+	tft.setCursor(25, 32);
 	tft.print("Cycle:");
-	tft.setCursor(25, 40);
+	tft.setCursor(25, 42);
 	tft.print("PW:");
-	tft.setCursor(25, 50);
+	tft.setCursor(25, 52);
 	tft.print("Duty:");
 #ifdef DRAW_TIMEBASE
-	tft.setCursor(25, 60);
+	tft.setCursor(25, 62);
 	tft.print("T/div:");
 #endif
 
-	tft.setCursor(240, 20);
+	tft.setCursor(240, 22);
 	tft.print("Vmax:");
-	tft.setCursor(240, 30);
+	tft.setCursor(240, 32);
 	tft.print("Vmin:");
-	tft.setCursor(240, 40);
+	tft.setCursor(240, 42);
 	tft.print("Vavr:");
-	tft.setCursor(240, 50);
+	tft.setCursor(240, 52);
 	tft.print("Vpp:");
-	tft.setCursor(240, 60);
+	tft.setCursor(240, 62);
 	tft.print("Vrms:");
 	
 	// print new stats
 	tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
 
 	if(clearStats)
-		tft.fillRect(60, 20, 50, 50, ILI9341_BLACK);
+		tft.fillRect(61, 22, 48, 48, ILI9341_BLACK);
 	
 	if(wStats.pulseValid)	{
-		tft.setCursor(60, 20);
+		tft.setCursor(61, 22);
 		tft.print((int) wStats.freq);
-		tft.setCursor(60, 30);
+		tft.setCursor(61, 32);
 		tft.print(wStats.cycle); tft.print(" ms");
-		tft.setCursor(60, 40);
+		tft.setCursor(61, 42);
 		tft.print(wStats.avgPW/1000); tft.print(" ms");
-		tft.setCursor(60, 50);
-		tft.print(wStats.duty); tft.print(" %");
+		tft.setCursor(61, 52);
+		tft.print(wStats.duty, 1); tft.print(" %");
 	}
 	
 #ifdef DRAW_TIMEBASE
-	tft.setCursor(60, 60);
+	tft.setCursor(60, 62);
 	int timebase = ((double)samplingTime * 25) / NUM_SAMPLES;
 	if(timebase > 10000)	{
 		tft.print(timebase/1000); tft.print(" ms");
@@ -589,13 +605,13 @@ void drawStats()	{
 #endif
 	
 	if(clearStats)
-		tft.fillRect(270, 20, GRID_WIDTH + hOffset - 270 - 1, 50, ILI9341_BLACK);
+		tft.fillRect(270, 22, GRID_WIDTH + hOffset - 270 - 1, 48, ILI9341_BLACK);
 	
-	drawVoltage(wStats.Vmaxf, 20, wStats.mvPos);
-	drawVoltage(wStats.Vminf, 30, wStats.mvPos);
-	drawVoltage(wStats.Vavrf, 40, wStats.mvPos);
-	drawVoltage(wStats.Vmaxf - wStats.Vminf, 50, wStats.mvPos);
-	drawVoltage(wStats.Vrmsf, 60, wStats.mvPos);
+	drawVoltage(wStats.Vmaxf, 22, wStats.mvPos);
+	drawVoltage(wStats.Vminf, 32, wStats.mvPos);
+	drawVoltage(wStats.Vavrf, 42, wStats.mvPos);
+	drawVoltage(wStats.Vmaxf - wStats.Vminf, 52, wStats.mvPos);
+	drawVoltage(wStats.Vrmsf, 62, wStats.mvPos);
 	
 }
 
@@ -674,9 +690,15 @@ void calculateStats()	{
 	
 	wStats.mvPos = (rangePos == RNG_50mV) || (rangePos == RNG_20mV) || (rangePos == RNG_10mV);
 	wStats.Vrmsf = sqrt(sumSquares/NUM_SAMPLES) * adcMultiplier[rangePos];
+  if (couplingPos == CPL_DC) {
+  wStats.Vavrf = (sumSamples/NUM_SAMPLES + zeroVoltageA1) * adcMultiplier[rangePos];
+  wStats.Vmaxf = (Vmax + zeroVoltageA1) * adcMultiplier[rangePos];
+  wStats.Vminf = (Vmin + zeroVoltageA1) * adcMultiplier[rangePos];
+  } else {
 	wStats.Vavrf = sumSamples/NUM_SAMPLES * adcMultiplier[rangePos];
 	wStats.Vmaxf = Vmax * adcMultiplier[rangePos];
 	wStats.Vminf = Vmin * adcMultiplier[rangePos];
+  }
 }
 
 
@@ -754,7 +776,7 @@ void banner()	{
 
 	tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
 	tft.setCursor(30, 120);
-	tft.print("DSO-138 hardware by JYE-Tech");
+	tft.print("for STM32F103C8T6 Blue Pill and SPI TFT");
 	
 	tft.setCursor(30, 145);
 	tft.print("Firmware version: ");
@@ -764,5 +786,3 @@ void banner()	{
 	tft.setCursor(30, 200);
 	tft.print("GNU GENERAL PUBLIC LICENSE Version 3");
 }
-
-

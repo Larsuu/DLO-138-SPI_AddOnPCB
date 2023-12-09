@@ -1,5 +1,5 @@
 // comment out following line to use DSO push buttons instead of encoder
-#define USE_ENCODER
+//#define USE_ENCODER
 
 // serial print macros
 #define DBG_INIT(...) 		{ Serial.begin(__VA_ARGS__); 	}
@@ -18,15 +18,15 @@
 #define DG_SIGNAL2 		ILI9341_BLUE
 
 // pin definitions (DSO138)
-#define BOARD_LED 		PA15
-#define TEST_WAVE_PIN 	PA7     // 1KHz square wave output
+#define BOARD_LED 		PC13
+#define TEST_WAVE_PIN 	PB1     // 1KHz square wave output
 #define TRIGGER_IN		PA8
 #define TRIGGER_LEVEL	PB8
 #define VGEN			PB9		// used to generate negative voltage in DSO138
 
 // captured inputs
 #define AN_CH1 			PA0		// analog channel 1
-#define AN_CH2 			PA4		// analog channel 2
+#define AN_CH2 			PB0		// analog channel 2
 #define DG_CH1 			PA13	// digital channel 1 - 5V tolerant pin. Pin mask throughout code has to match digital pin
 #define DG_CH2 			PA14	// digital channel 2 - 5V tolerant pin. Pin mask throughout code has to match digital pin
 
