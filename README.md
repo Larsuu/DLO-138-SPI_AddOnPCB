@@ -18,6 +18,7 @@ This firmware can NOT be used on stock DSO-138 hardware. We can build the hardwa
 You need not to have the DSO-138. Instead you can build the hardware on the breadboard or create original PCB. In the case of DLO-138, it is the loss of lowest timebase. Maximum sampling rate in DLO-138 is 20 µs/div instead of 10 µs/div. In the 20 µs/div range, firmware under-samples ADC channels, often reading same data twice. To use the second analog channel, analog front end has to be duplicated on a daughter board. On a stock hardware, this firmware can be used to provide two digital logic channels.
 
 In the case of DLO-138-SPI, the frontend input circuit is simplified for ease of build. It can't accept negative voltage, and the voltage range is fixed to 0.5V/div only. AC mode is not implemented yet.
+Furthermore, a comparator for trigger detection have been omitted so that the ability of pre-trigger viewing is not available.
 
 # Build
 The build environment uses Arduino. For help with setting up IDE visit http://www.stm32duino.com
@@ -38,9 +39,9 @@ Circuit diagram is as follows:
 	
 		Focus				Action
 		Trigger Level		Zero the trigger level to Analog channel 1
-		Wave X scrollbar	Center waveform on screen (at trigger point)
+		Wave X scrollbar	Beginning of waveform on screen (at trigger point)
 		Wave Y cursor		Zero the cursor. If Analog CH1 coupling is GND, waveform reference base is set 
-		Other				Toggle on screen Analog CH1 statistics display
+		Other			Toggle on screen Analog CH1 statistics display
 
 	Press and hold OK button at power up to reset settings to default
 
