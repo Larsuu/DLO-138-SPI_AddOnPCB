@@ -35,6 +35,7 @@ Circuit diagram is as follows:
 	Push button in encoder (SEL if using switches) moves focus to next parameter
 	Left/Right turn in encoder (+/- if using switches) changes the parameter which is in focus
 	Short press OK to HOLD the waveform and output it on serial port
+ 	At wave selection, + button rotates all the combination of A2 D1 D3. A1 is always active.
 	Long press OK button:
 	
 		Focus				Action
