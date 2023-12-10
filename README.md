@@ -7,7 +7,7 @@ DSO-138 is an excellent piece of hardware based on ARM Cortex M3 core STM32F103 
 
 ## Features
 - Two analog channels
-- Two digital logic channels (SWDIO and SWDIO pins (PA13 and PA14) on board)
+- Two digital logic channels (SWDIO and SWCLK pins (PA13 and PA14) on board)
 - Serial port interface for captured waveform data
 - Option to use rotary encoder instead of + - and SEL switches
 - 2K sample depth
