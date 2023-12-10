@@ -47,6 +47,8 @@ Circuit diagram is as follows:
 	Press and hold OK button at power up to reset settings to default
 
 # References
+DLO-138 - https://github.com/ardyesp/DLO-138
+
 DSO-138 - http://www.jyetech.com/Products/LcdScope/e138.php
 
 STM32Duino - http://www.stm32duino.com
