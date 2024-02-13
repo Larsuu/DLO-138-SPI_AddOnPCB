@@ -2,7 +2,7 @@
 An open source firmware for DSO-138 Oscilloscope for STM32F103C8T6 Blue Pill and SPI TFT display. 
 <img src="pics/DLO-138-SPI.JPG">
 
-This is a modification to the DLO-138 for the so called Blue Pill STM32F103C8T6 bord and SPI TFT 320x240 display.
+This is a modification to the DLO-138 for the so called Blue Pill STM32F103C8T6 board and SPI TFT 320x240 display.
 DSO-138 is an excellent piece of hardware based on ARM Cortex M3 core STM32F103 processor and sufficient for most beginner users. The stock firmware, while quite responsive, can use a few improvements. The main shortcoming which prompted the development of DLO-138 firmware is the inability to get waveform data into a computer for further analysis and the lack of a second channel. Engineers troubleshooting hardware issues need to mark reference points on waveform so having another analog or digital channel can greatly improve analysis. This firmware hopes to improve on these issues.
 
 ## Features
