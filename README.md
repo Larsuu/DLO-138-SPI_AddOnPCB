@@ -12,7 +12,7 @@ DSO-138 is an excellent piece of hardware based on ARM Cortex M3 core STM32F103 
 - Option to use rotary encoder instead of + - and SEL switches
 - 2K sample depth
 
-This firmware can NOT be used on stock DSO-138 hardware. We can build the hardware using stock STM32F103CC8T6 bord and a SPI TFT display.
+This firmware can NOT be used on stock DSO-138 hardware. We can build the hardware using stock STM32F103C8T6 board and a SPI TFT display.
 
 # Cost
 You need not to have the DSO-138. Instead you can build the hardware on the breadboard or create original PCB. In the case of DLO-138, it is the loss of lowest timebase. Maximum sampling rate in DLO-138 is 20 µs/div instead of 10 µs/div. In the 20 µs/div range, firmware under-samples ADC channels, often reading same data twice. To use the second analog channel, analog front end has to be duplicated on a daughter board. On a stock hardware, this firmware can be used to provide two digital logic channels.
