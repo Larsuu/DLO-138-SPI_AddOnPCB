@@ -20,7 +20,7 @@ You need not to have the DSO-138. Instead you can build the hardware on the brea
 In the case of DLO-138-SPI, the frontend input circuit is simplified for ease of build. It can't accept negative voltage, and the voltage range is fixed to 0.5V/div only. AC mode is not implemented yet.
 Furthermore, a comparator for trigger detection have been omitted. Instead it uses the analog watchdog function of the ADC for pre-trigger capability.
 However the interrupt process takes cirtain amount of time at every crossing of the trigger level umtil actual trigger point.
-So in the scan range faster than 500us/div, it looses some samples at every crossing of the trigger level.
+So in the scan range faster than 0.1ms/div, it looses some samples at every crossing of the trigger level.
 This is not the case after the trigger point. 
 
 # Build
