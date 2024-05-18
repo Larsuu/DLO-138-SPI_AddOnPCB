@@ -15,17 +15,23 @@ DSO-138 is an excellent piece of hardware based on ARM Cortex M3 core STM32F103 
 This firmware can NOT be used on stock DSO-138 hardware. We can build the hardware using stock STM32F103C8T6 board and a SPI TFT display.
 
 # Cost
-You need not to have the DSO-138. Instead you can build the hardware on the breadboard or create original PCB. In the case of DLO-138, it is the loss of lowest timebase. Maximum sampling rate in DLO-138 is 20 µs/div instead of 10 µs/div. In the 20 µs/div range, firmware under-samples ADC channels, often reading same data twice. To use the second analog channel, analog front end has to be duplicated on a daughter board. On a stock hardware, this firmware can be used to provide two digital logic channels.
+You need not to have the DSO-138. Instead you can build the hardware on the breadboard or create original PCB. In the case of DLO-138, it is the loss of lowest timebase. Maximum sampling rate in DLO-138 is 20 µs/div instead of 10 µs/div. In the 20 µs/div range, firmware under-samples ADC channels, often reading same data twice. To use the second analog channel, analog front end has to be duplicated. This firmware can be used to provide two digital logic channels.
 
 In the case of DLO-138-SPI, the frontend input circuit is simplified for ease of build. It can't accept negative voltage, and the voltage range is fixed to 0.5V/div only. AC mode is not implemented yet.
-Furthermore, a comparator for trigger detection have been omitted so that the ability of pre-trigger viewing is not available.
+Furthermore, a comparator for trigger detection have been omitted. Instead it uses the analog watchdog function of the ADC for pre-trigger capability.
+However the interrupt process takes cirtain amount of time at every crossing of the trigger level umtil actual trigger point.
+So in the scan range faster than 500us/div, it looses some samples at every crossing of the trigger level.
+This is not the case after the trigger point. 
 
 # Build
-The build environment uses Arduino. For help with setting up IDE visit http://www.stm32duino.com
+The build environment uses Arduino IDE 1.8.19. For help with setting up IDE visit http://www.stm32duino.com<br>
+The board support is STM32F1xx/GD32F1xx boards by stm32duino version 2022.9.26<br>
+(additional URL: http://dan.drown.org/stm32duino/package_STM32duino_index.json )<br>
+CPU speed is 72MHz.
 
-For graphics output, this project depends on the Adafruit GFX Library v1.11.9.
-Install it via the Library Manager of your Arduino IDE.
-Other/newer versions of this library are likely to not compile or will give you a black screen.
+For graphics output, this project depends on the Adafruit_GFX_AS. However it is old so that it is necessary to add a line <br>
+#define textsize textsize_x<br>
+around line 62 of the Adafruit_GFX_AS.cpp of the STM32 library.
 
 # Hardware
 Circuit diagram is as follows:
@@ -55,7 +61,7 @@ STM32Duino - http://www.stm32duino.com
 
 STM32F103 - http://www.st.com/en/microcontrollers/stm32f103.html
 
-Adafruint Graphics Library - https://github.com/adafruit/Adafruit-GFX-Library
+Adafruit Graphics Library - https://github.com/adafruit/Adafruit-GFX-Library
 
 Adafruit ILI9341 Arduino Library - https://github.com/adafruit/Adafruit_ILI9341
 
