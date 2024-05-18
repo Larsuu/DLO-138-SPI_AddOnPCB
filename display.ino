@@ -1,3 +1,4 @@
+#include <fonts/FreeSans9pt7b.h>
 // TFT display constants
 #define PORTRAIT 		0
 #define LANDSCAPE 		1
@@ -7,18 +8,18 @@
 #define GRID_WIDTH		300
 #define GRID_HEIGHT		200
 
-#define GRID_COLOR		0x4208
+#define GRID_COLOR		0x630c    //0x4208
 #define ADC_MAX_VAL		4096
-//#define ADC_2_GRID		4965    // 1v/div
-#define ADC_2_GRID    2482    // 0.5v/div
-//#define ADC_2_GRID    993    // 0.2v/div
-//#define ADC_2_GRID    497    // 0.1v/div
+//#define ADC_2_GRID    8937    // 1v/div =1.0*4096*8/3.3*0.9
+#define ADC_2_GRID    4468    // 0.5v/div =0.5*4096*8/3.3*0.9
+//#define ADC_2_GRID    1787    // 0.2v/div
+//#define ADC_2_GRID    894     // 0.1v/div
 
 
 #define TFT_CS         PA15
 #define TFT_DC         PB10
 #define TFT_RST        PB11
-Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST); // Mosi - PA7, SCK - PA5
+Adafruit_ILI9341_STM tft = Adafruit_ILI9341_STM(TFT_CS, TFT_DC, TFT_RST); // Mosi - PA7, SCK - PA5
 
 // rendered waveform data is stored here for erasing
 int16_t ch1Old[GRID_WIDTH] = {0};
@@ -87,8 +88,9 @@ void initDisplay()	{
 	tft.setRotation(LANDSCAPE);
 	tft.fillScreen(ILI9341_BLACK);
 	banner();
+  tft.setFont(&FreeSans9pt7b);
 
-	delay(4000);
+	delay(1000);
 
 	// and paint o-scope
 	clearWaves();
@@ -146,9 +148,11 @@ void indicateCapturing()	{
 // ------------------------
 	if((currentTimeBase > T2MS) || (triggerType != TRIGGER_AUTO))	{
 		cDisplayed = true;
+    tft.setFont(NULL);
 		tft.setTextColor(ILI9341_PINK, ILI9341_BLACK);
 		tft.setCursor(140, 20);
 		tft.print("Sampling...");
+    tft.setFont(&FreeSans9pt7b);
 	}
 }
 
@@ -359,19 +363,27 @@ void drawGrid()	{
 	uint8_t hPacing = GRID_WIDTH / 12;
 	uint8_t vPacing = GRID_HEIGHT / 8;
 
-	for(int i = 1; i < 12; i++)
-		tft.drawFastVLine(i * hPacing + hOffset, vOffset, GRID_HEIGHT, GRID_COLOR);
+	for(int i = 1; i < 12; i++) {
+//		tft.drawFastVLine(i * hPacing + hOffset, vOffset, GRID_HEIGHT, GRID_COLOR);
+    for (int y = 0; y < GRID_HEIGHT; y += 5)
+      tft.drawPixel(i * hPacing + hOffset, vOffset + y, GRID_COLOR);
+	}
+  tft.drawFastVLine(6 * hPacing + hOffset, vOffset, GRID_HEIGHT, GRID_COLOR);
 
-	for(int i = 1; i < 8; i++)
-		tft.drawFastHLine(hOffset, i * vPacing + vOffset, GRID_WIDTH, GRID_COLOR);
+	for(int i = 1; i < 8; i++) {
+//		tft.drawFastHLine(hOffset, i * vPacing + vOffset, GRID_WIDTH, GRID_COLOR);
+    for (int x = 0; x < GRID_WIDTH; x += 5)
+      tft.drawPixel(x + hOffset, i * vPacing + vOffset, GRID_COLOR);
+	}
+  tft.drawFastHLine(hOffset, 4 * vPacing + vOffset, GRID_WIDTH, GRID_COLOR);
 
 	for(int i = 1; i < 5*8; i++)
-		tft.drawFastHLine(hOffset + GRID_WIDTH/2 - 3, i * vPacing/5 + vOffset, 7, GRID_COLOR);
+		tft.drawFastHLine(hOffset + GRID_WIDTH/2 - 2, i * vPacing/5 + vOffset, 5, GRID_COLOR);
 
 	for(int i = 1; i < 5*12; i++)
-		tft.drawFastVLine(i * hPacing/5 + hOffset, vOffset + GRID_HEIGHT/2 - 4, 7, GRID_COLOR);
+		tft.drawFastVLine(i * hPacing/5 + hOffset, vOffset + GRID_HEIGHT/2 - 2, 5, GRID_COLOR);
 
-	tft.drawRect(hOffset, vOffset, GRID_WIDTH, GRID_HEIGHT, ILI9341_WHITE);
+	tft.drawRect(hOffset, vOffset, GRID_WIDTH, GRID_HEIGHT + 1, ILI9341_WHITE);
 }
 
 
@@ -388,7 +400,7 @@ void drawLabels()	{
 
 	// paint run/hold information
 	// -----------------
-	tft.setCursor(hOffset + 2, 4);
+	tft.setCursor(hOffset + 2, 14);
 
 	if(hold)	{
 		tft.setTextColor(ILI9341_WHITE, ILI9341_RED);
@@ -418,6 +430,7 @@ void drawLabels()	{
 	
 	// print active wave indicators
 	// -----------------
+  tft.setFont(NULL);
 	tft.setCursor(250, 4);
 	if(waves[0])	{
 		tft.setTextColor(AN_SIGNAL1, ILI9341_BLACK);
@@ -463,30 +476,31 @@ void drawLabels()	{
 		drawVCursor(0, AN_SIGNAL1, (currentFocus == L_vPos1));
 
 	// erase bottom bar
-	tft.fillRect(hOffset, GRID_HEIGHT + vOffset, TFT_WIDTH, vOffset, ILI9341_BLACK);
+	tft.fillRect(hOffset, GRID_HEIGHT + vOffset + 1, TFT_WIDTH, vOffset, ILI9341_BLACK);
 
 	// print input switch pos
 	// -----------------
+  tft.setFont(&FreeSans9pt7b);
 	tft.setTextColor(ILI9341_YELLOW, ILI9341_BLACK);
-	tft.setCursor(hOffset + 10, GRID_HEIGHT + vOffset + 4);
+	tft.setCursor(hOffset + 0, GRID_HEIGHT + vOffset + 16);
 	tft.print(rngNames[rangePos]);
-	tft.setCursor(hOffset + 50, GRID_HEIGHT + vOffset + 4);
+	tft.setCursor(hOffset + 50, GRID_HEIGHT + vOffset + 16);
 	tft.print(cplNames[couplingPos]);
 	
 	// print new timebase
 	// -----------------
 	tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-	tft.setCursor(145, GRID_HEIGHT + vOffset + 4);
+	tft.setCursor(130, GRID_HEIGHT + vOffset + 16);
 	if(currentFocus == L_timebase)
-		tft.drawRect(140, GRID_HEIGHT + vOffset, 45, vOffset, ILI9341_WHITE);
+		tft.drawRect(128, GRID_HEIGHT + vOffset + 1, 62, vOffset-1, ILI9341_WHITE);
 	tft.print(getTimebaseLabel());
 
 	// print trigger type
 	// -----------------
 	tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
-	tft.setCursor(230, GRID_HEIGHT + vOffset + 4);
+	tft.setCursor(204, GRID_HEIGHT + vOffset + 16);
 	if(currentFocus == L_triggerType)
-		tft.drawRect(225, GRID_HEIGHT + vOffset, 35, vOffset, ILI9341_WHITE);
+		tft.drawRect(200, GRID_HEIGHT + vOffset + 1, 60, vOffset-1, ILI9341_WHITE);
 
 	switch(triggerType)	{
 		case TRIGGER_AUTO:
@@ -503,20 +517,20 @@ void drawLabels()	{
 	// draw trigger edge
 	// -----------------
 	if(currentFocus == L_triggerEdge)
-		tft.drawRect(266, GRID_HEIGHT + vOffset, 15, vOffset + 4, ILI9341_WHITE);
+		tft.drawRect(266, GRID_HEIGHT + vOffset + 1, 15, vOffset - 1, ILI9341_WHITE);
 
 	int trigX = 270;
 	
 	if(triggerRising)	{
 		tft.drawFastHLine(trigX, TFT_HEIGHT - 3, 5, ILI9341_GREEN);
-		tft.drawFastVLine(trigX + 4, TFT_HEIGHT -vOffset + 2, vOffset - 4, ILI9341_GREEN);
-		tft.drawFastHLine(trigX + 4, TFT_HEIGHT -vOffset + 2, 5, ILI9341_GREEN);
+		tft.drawFastVLine(trigX + 4, TFT_HEIGHT -vOffset + 3, vOffset - 6, ILI9341_GREEN);
+		tft.drawFastHLine(trigX + 4, TFT_HEIGHT -vOffset + 3, 5, ILI9341_GREEN);
 		tft.fillTriangle(trigX + 2, 232, trigX + 4, 230, trigX + 6, 232, ILI9341_GREEN);
 	}
 	else	{
 		tft.drawFastHLine(trigX + 4, TFT_HEIGHT - 3, 5, ILI9341_GREEN);
-		tft.drawFastVLine(trigX + 4, TFT_HEIGHT -vOffset + 2, vOffset - 4, ILI9341_GREEN);
-		tft.drawFastHLine(trigX - 1, TFT_HEIGHT -vOffset + 2, 5, ILI9341_GREEN);
+		tft.drawFastVLine(trigX + 4, TFT_HEIGHT -vOffset + 3, vOffset - 6, ILI9341_GREEN);
+		tft.drawFastHLine(trigX - 1, TFT_HEIGHT -vOffset + 3, 5, ILI9341_GREEN);
 		tft.fillTriangle(trigX + 2, 231, trigX + 4, 233, trigX + 6, 231, ILI9341_GREEN);
 	}	
 	
@@ -552,49 +566,49 @@ void drawStats()	{
 	// draw stat labels
 	tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
 
-	tft.setCursor(25, 22);
+	tft.setCursor(12, 34);
 	tft.print("Freq:");
-	tft.setCursor(25, 32);
+	tft.setCursor(12, 52);
 	tft.print("Cycle:");
-	tft.setCursor(25, 42);
+	tft.setCursor(12, 70);
 	tft.print("PW:");
-	tft.setCursor(25, 52);
+	tft.setCursor(12, 88);
 	tft.print("Duty:");
 #ifdef DRAW_TIMEBASE
-	tft.setCursor(25, 62);
+	tft.setCursor(12, 106);
 	tft.print("T/div:");
 #endif
 
-	tft.setCursor(240, 22);
+	tft.setCursor(215, 34);
 	tft.print("Vmax:");
-	tft.setCursor(240, 32);
+	tft.setCursor(215, 52);
 	tft.print("Vmin:");
-	tft.setCursor(240, 42);
+	tft.setCursor(215, 70);
 	tft.print("Vavr:");
-	tft.setCursor(240, 52);
+	tft.setCursor(215, 88);
 	tft.print("Vpp:");
-	tft.setCursor(240, 62);
+	tft.setCursor(215, 106);
 	tft.print("Vrms:");
 	
 	// print new stats
 	tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
 
 	if(clearStats)
-		tft.fillRect(61, 22, 48, 48, ILI9341_BLACK);
+		tft.fillRect(68, 22, 88, 68, ILI9341_BLACK);
 	
 	if(wStats.pulseValid)	{
-		tft.setCursor(61, 22);
+		tft.setCursor(68, 34);
 		tft.print((int) wStats.freq);
-		tft.setCursor(61, 32);
-		tft.print(wStats.cycle); tft.print(" ms");
-		tft.setCursor(61, 42);
-		tft.print(wStats.avgPW/1000); tft.print(" ms");
-		tft.setCursor(61, 52);
+		tft.setCursor(68, 52);
+		tft.print(wStats.cycle); tft.print("ms");
+		tft.setCursor(68, 70);
+		tft.print(wStats.avgPW/1000); tft.print("ms");
+		tft.setCursor(68, 88);
 		tft.print(wStats.duty, 1); tft.print(" %");
 	}
 	
 #ifdef DRAW_TIMEBASE
-	tft.setCursor(60, 62);
+	tft.setCursor(68, 106);
 	int timebase = ((double)samplingTime * 25) / NUM_SAMPLES;
 	if(timebase > 10000)	{
 		tft.print(timebase/1000); tft.print(" ms");
@@ -605,13 +619,13 @@ void drawStats()	{
 #endif
 	
 	if(clearStats)
-		tft.fillRect(270, 22, GRID_WIDTH + hOffset - 270 - 1, 48, ILI9341_BLACK);
+		tft.fillRect(270, 22, GRID_WIDTH + hOffset - 270 - 1, 86, ILI9341_BLACK);
 	
-	drawVoltage(wStats.Vmaxf, 22, wStats.mvPos);
-	drawVoltage(wStats.Vminf, 32, wStats.mvPos);
-	drawVoltage(wStats.Vavrf, 42, wStats.mvPos);
-	drawVoltage(wStats.Vmaxf - wStats.Vminf, 52, wStats.mvPos);
-	drawVoltage(wStats.Vrmsf, 62, wStats.mvPos);
+	drawVoltage(wStats.Vmaxf, 34, wStats.mvPos);
+	drawVoltage(wStats.Vminf, 52, wStats.mvPos);
+	drawVoltage(wStats.Vavrf, 70, wStats.mvPos);
+	drawVoltage(wStats.Vmaxf - wStats.Vminf, 88, wStats.mvPos);
+	drawVoltage(wStats.Vrmsf, 106, wStats.mvPos);
 	
 }
 
@@ -728,7 +742,7 @@ void drawVoltage(float volt, int y, boolean mvRange)	{
 	// mv range has mV appended at back
 	if(mvRange)	{
 		numDigits += 1;
-		int x = GRID_WIDTH + hOffset - 10 - numDigits * 5;
+		int x = GRID_WIDTH + hOffset - 20 - numDigits * 5;
 		tft.setCursor(x, y);
 		int iVolt = volt;
 		tft.print(iVolt);
@@ -737,7 +751,7 @@ void drawVoltage(float volt, int y, boolean mvRange)	{
 	else	{
 		// non mV range has two decimal pos and V appended at back
 		numDigits += 3;
-		int x = GRID_WIDTH + hOffset -10 - numDigits * 5;
+		int x = GRID_WIDTH + hOffset -20 - numDigits * 5;
 		tft.setCursor(x, y);
 		tft.print(volt);
 	}
@@ -751,7 +765,7 @@ void drawVoltage(float volt, int y, boolean mvRange)	{
 // ------------------------
 void clearStats()	{
 // ------------------------
-	tft.fillRect(hOffset, vOffset, GRID_WIDTH, 80, ILI9341_BLACK);
+	tft.fillRect(hOffset, vOffset, GRID_WIDTH, 88, ILI9341_BLACK);
 }
 
 

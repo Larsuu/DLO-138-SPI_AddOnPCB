@@ -50,6 +50,7 @@ void controlLoop()	{
 		// update display indicating hold released
 		drawLabels();
 	}
+  commitSaveConfig();
 
 	// process any long pending operations which cannot be serviced in ISR
 }

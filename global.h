@@ -31,15 +31,19 @@
 #define DG_CH2 			PA14	// digital channel 2 - 5V tolerant pin. Pin mask throughout code has to match digital pin
 
 // misc analog inputs
-#define VSENSSEL1 		PA2
-#define VSENSSEL2		PA1
-#define CPLSEL			PA3
+//#define VSENSSEL1 		PA2
+//#define VSENSSEL2		PA1
+//#define CPLSEL			PA3
 
 // switches
 #define ENCODER_SW		PB12
 #define ENCODER_A		PB13
 #define ENCODER_B		PB14
 #define BTN4 			PB15
+#define AC_CH1    PB4
+#define AC_CH2    PB6
+#define OF_CH1    PB3
+#define OF_CH2    PB5
 
 // TFT pins are hard coded in Adafruit_TFTLCD_8bit_STM32.h file
 // TFT_RD         PB10

@@ -1,15 +1,19 @@
 #include <EEPROM.h>
 
-#include <Adafruit_GFX.h> 
+#include <Adafruit_GFX_AS.h> 
 // needs to be Adafruit GFX Library v1.1.4, check/change your installed version
 // otherwise you will get a black screen or compiler errors
 
-#include <Adafruit_ILI9341.h>
+#include <Adafruit_ILI9341_STM.h>
 #include "global.h"
 #include "variables.h"
 
+#include <STM32ADC.h>
 
-#define FIRMWARE_VERSION	"1.0"
+STM32ADC myADC1(ADC1), myADC2(ADC2); 
+
+
+#define FIRMWARE_VERSION	"1.10"
 
 // ------------------------
 void setup()	{
@@ -20,12 +24,6 @@ void setup()	{
 	
 	
 	DBG_INIT(SERIAL_BAUD_RATE);
-  for (int i = 0; i < 40; ++i) {
-    if (Serial) break;
-    delay(100);
-  }
-	DBG_PRINT("Dual channel O Scope with two logic channels, ver: ");
-	DBG_PRINTLN(FIRMWARE_VERSION);
 
 	// set digital and analog stuff
 	initIO();
@@ -35,6 +33,14 @@ void setup()	{
 	
 	// init the IL9341 display
 	initDisplay();
+  for (int i = 0; i < 20; ++i) {
+    if (Serial) break;
+    delay(100);
+  }
+  DBG_PRINT("Dual channel O Scope with two logic channels, ver: ");
+  DBG_PRINTLN(FIRMWARE_VERSION);
+  myADC1.attachAnalogWatchdogInterrupt(triggerISR);
+//  myADC2.attachAnalogWatchdogInterrupt(triggerISR2);
 }
 
 

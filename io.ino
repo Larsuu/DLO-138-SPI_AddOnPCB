@@ -11,6 +11,8 @@ void initIO()	{
 	pinMode(DG_CH1, INPUT_PULLDOWN);
 	pinMode(DG_CH2, INPUT_PULLDOWN);
 	pinMode(TRIGGER_IN, INPUT_PULLUP);
+  pinMode(AC_CH1, INPUT_PULLUP);
+  pinMode(AC_CH2, INPUT_PULLUP);
 	
 	// calibrate the ADC channels at startup
 	adc_calibrate(ADC1);
@@ -20,7 +22,7 @@ void initIO()	{
 	// start 1KHz square wave
 	pinMode(TEST_WAVE_PIN, PWM);
 	Timer3.setPeriod(1000);
-	pwmWrite(TEST_WAVE_PIN, 17850);
+	pwmWrite(TEST_WAVE_PIN, Timer3.getOverflow() / 2);
 	DBG_PRINTLN("Test square wave started");
 	
 	// input button and encoder
@@ -62,11 +64,12 @@ void setADC()	{
 	int pinMapADCin1 = PIN_MAP[AN_CH1].adc_channel;
 	int pinMapADCin2 = PIN_MAP[AN_CH2].adc_channel;
 	
-	// opamp is low impedance, set fastest sampling 
-	adc_set_sample_rate(ADC1, ADC_SMPR_1_5);
-	adc_set_sample_rate(ADC2, ADC_SMPR_1_5);
+	// opamp is low impedance, set next fastest sampling 
+	adc_set_sample_rate(ADC1, ADC_SMPR_7_5);
+	adc_set_sample_rate(ADC2, ADC_SMPR_7_5);
 
 	adc_set_reg_seqlen(ADC1, 1);
+  adc_set_reg_seqlen(ADC2, 1);
 	ADC1->regs->SQR3 = pinMapADCin1;
 	// set ADC1 continuous mode
 	ADC1->regs->CR2 |= ADC_CR2_CONT; 	
@@ -94,10 +97,11 @@ void blinkLED()	{
 // ------------------------
 void initScanTimeout()	{
 // ------------------------
-	Timer2.setChannel1Mode(TIMER_OUTPUTCOMPARE);
-	Timer2.pause();
-	Timer2.setCompare1(1);
-	Timer2.attachCompare1Interrupt(scanTimeoutISR);
+  Timer2.pause();
+  Timer2.setPeriod(100 * 1000);    // 100msec
+  Timer2.setCount(0);
+  Timer2.attachInterrupt(TIMER_UPDATE_INTERRUPT, scanTimeoutISR);
+  Timer2.refresh();
 }
 
 
@@ -113,10 +117,8 @@ int16_t getTriggerLevel()	{
 // ------------------------
 void setTriggerLevel(int16_t tLvl)	{
 // ------------------------
-	// 600 = 20% duty
-	// 1800 = 50%
 	trigLevel = tLvl;
-	pwmWrite(TRIGGER_LEVEL, 1800 + trigLevel);
+	trigger_ad = tLvl + 2048;
 }
 
 
@@ -131,41 +133,22 @@ void readInpSwitches()	{
 	uint16_t cpl, pos1, pos2;
 	adc_reg_map *ADC1regs = ADC1->regs;
 
-	// ADC1 and ADC2 are free running at max speed
+	// check AC/DC switch 1 
+  if (digitalRead(AC_CH1) == LOW) {
+    couplingPos = CPL_AC;
+    digitalWrite(OF_CH1, HIGH);
+  } else {
+    couplingPos = CPL_DC;
+    digitalWrite(OF_CH1, LOW);
+  }
+  // check AC/DC switch 2 
+  if (digitalRead(AC_CH2) == LOW) {
+    digitalWrite(OF_CH2, HIGH);
+  } else {
+    digitalWrite(OF_CH2, LOW);
+  }
 	
-	// change to switch 1 
-//	ADC1regs->SQR3 = PIN_MAP[VSENSSEL2].adc_channel;
-//	delayMicroseconds(100);
-//	pos2 = (uint16_t) (ADC1regs->DR & ADC_DR_DATA);
-//	
-//	ADC1regs->SQR3 = PIN_MAP[VSENSSEL1].adc_channel;
-//	delayMicroseconds(100);
-//	pos1 = (uint16_t) (ADC1regs->DR & ADC_DR_DATA);
-//	
-//	ADC1regs->SQR3 = PIN_MAP[CPLSEL].adc_channel;
-//	delayMicroseconds(100);
-//	cpl = (uint16_t) (ADC1regs->DR & ADC_DR_DATA);
-	
-//	if(cpl < 400)
-//		couplingPos = CPL_GND;
-//	else if(cpl < 2000)
-//		couplingPos = CPL_AC;
-//	else
-		couplingPos = CPL_DC;
-	
-//	if(pos1 < 400)
-		rangePos = RNG_0_5V;
-//	else if(pos1 < 2000)
-//		rangePos = RNG_0_1V;
-//	else
-//		rangePos = RNG_10mV;
-	
-//	if(pos2 < 400)
-//		rangePos -= 2;
-//	else if(pos2 < 2000)
-//		rangePos -= 1;
-//	else
-//		rangePos -= 0;
+	rangePos = RNG_0_5V;
 	
 	// check if switch position changed from previous snap
 	if(couplingPos != couplingOld)	{
@@ -177,11 +160,4 @@ void readInpSwitches()	{
 		rangeOld = rangePos;
 		repaintLabels();
 	}
-	
-	// read the negative voltage generator
-	// ***
-	
-	// switch ADC1 back to capture channel
-	ADC1regs->SQR3 = PIN_MAP[AN_CH1].adc_channel;
-	delayMicroseconds(100);
 }

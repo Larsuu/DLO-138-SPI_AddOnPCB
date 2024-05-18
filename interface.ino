@@ -90,10 +90,8 @@ void resetParam()	{
 			repaintLabels();
 			break;
 		case L_window:
-//      // set x in the middle
-//      changeXCursor((NUM_SAMPLES - GRID_WIDTH)/2);
-      // set x at the top
-      changeXCursor(0);
+			// set x in the middle
+			changeXCursor((NUM_SAMPLES - GRID_WIDTH)/2);
 			break;
 		case L_vPos1:
 			// zero the trace base

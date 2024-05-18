@@ -1,17 +1,18 @@
 
 // sampling delay table in quarter-microseconds
-const int16_t samplingDelay[] =   {-1, 5, 14, 33, 81, 178, 465, 946, 1910, 4776, 9570, 19163};
+const int16_t samplingDelay[] =   {-1, 3, 14, 33, 81, 178, 465, 946, 1910, 4776, 9570, 19163};
 const uint16_t timeoutDelayMs[] = {50, 50, 50, 100, 100, 100, 150, 250, 500, 1000, 2000, 4500};
 
 int16_t sDly, tDly;
-boolean minSamplesAcquired;
-boolean triggerRising;
+volatile boolean minSamplesAcquired;
+volatile boolean triggerRising;
 long prevTime = 0;
 
 // hold pointer references for updating variables in memory
 uint16_t *sIndexPtr = &sIndex;
 volatile boolean *keepSamplingPtr = &keepSampling;
 volatile boolean *triggeredPtr = &triggered;
+volatile uint16_t trigger_ad = 2048;
 
 
 
@@ -35,12 +36,6 @@ void setTriggerRising(boolean rising)	{
 	// trigger changed, break out from previous sampling loop
 	keepSampling = false;
 	triggerRising = rising;
-	// attach interrupt to trigger pin
-//	detachInterrupt(TRIGGER_IN);
-//	if(rising)
-//		attachInterrupt(TRIGGER_IN, triggerISR, RISING);
-//	else
-//		attachInterrupt(TRIGGER_IN, triggerISR, FALLING);
 }
 
 
@@ -67,9 +62,8 @@ void sampleWaves(boolean wTimeout)	{
 // ------------------------
 void startScanTimeout(int16_t mSec)	{
 // ------------------------
-	// interrupt triggers at 1
-	Timer2.setCount(2);
-	Timer2.setPeriod(mSec * 1000);
+  Timer2.setPeriod(mSec * 1000);
+  Timer2.refresh();
 	Timer2.resume();
 }
 
@@ -120,16 +114,69 @@ extern "C" void __irq_exti9_5(void) {
 // ------------------------
 void triggerISR(void) {
 // ------------------------
-	if(!triggered)	{
-		// skip this trigger if min samples not acquired
-		if(!minSamplesAcquired && (sIndex < NUM_SAMPLES/2))
-			return;
+//  disable_awd(ADC1);  // to avoid ISR nesting
+  ADC1->regs->CR1 &= ~ADC_CR1_AWDEN;
+  if (ADC1->regs->LTR == 0) {       //if start from low
+    ADC1->regs->HTR = 4095;
+    ADC1->regs->LTR = trigger_ad;
+    if (!triggerRising) {
+      ADC1->regs->CR1 |= ADC_CR1_AWDEN;
+      return;
+    }
+  } else {
+    ADC1->regs->LTR = 0;
+    ADC1->regs->HTR = trigger_ad;
+    if (triggerRising) {
+      ADC1->regs->CR1 |= ADC_CR1_AWDEN;
+      return;
+    }
+  }
+  if(!triggered) {
+    // skip this trigger if min samples not acquired
+    if(!minSamplesAcquired && (sIndex < NUM_SAMPLES/2)) {
+      ADC1->regs->CR1 |= ADC_CR1_AWDEN;
+      return;
+    }
 		
 		// snap the position where trigger occurred
 		tIndex = sIndex;
 		// avoid multiple triggering
 		triggered = true;
 	}
+} 
+
+// ------------------------
+void triggerISR2(void) {
+// ------------------------
+//  disable_awd(ADC2);  // to avoid ISR nesting
+  ADC2->regs->CR1 &= ~ADC_CR1_JAWDEN;
+  if (ADC2->regs->LTR == 0) {       //if start from low
+    ADC2->regs->HTR = 4095;
+    ADC2->regs->LTR = trigger_ad;
+    if (!triggerRising) {
+      ADC2->regs->CR1 |= ADC_CR1_JAWDEN;
+      return;
+    }
+  } else {
+    ADC2->regs->LTR = 0;
+    ADC2->regs->HTR = trigger_ad;
+    if (triggerRising) {
+      ADC2->regs->CR1 |= ADC_CR1_JAWDEN;
+      return;
+    }
+  }
+  if(!triggered) {
+    // skip this trigger if min samples not acquired
+    if(!minSamplesAcquired && (sIndex < NUM_SAMPLES/2)) {
+      ADC2->regs->CR1 |= ADC_CR1_JAWDEN;
+      return;
+    }
+    
+    // snap the position where trigger occurred
+    tIndex = sIndex;
+    // avoid multiple triggering
+    triggered = true;
+  }
 } 
 
 
@@ -156,10 +203,24 @@ void startSampling(int16_t lDelay)	{
 	// clear old dataset
 	samplingTime = 0;
 	triggered = false;
-  triggered = findTrigger();
 	sIndex = 0;
-	
-	prevTime = micros();
+
+  disable_awd(ADC1);  // to avoid ISR nesting
+  if (ADC1->regs->DR > trigger_ad) {
+    myADC1.setAnalogWatchdog(0, 4095, trigger_ad);  // channel of PA0 = 0, high limit, low limit
+  } else {
+    myADC1.setAnalogWatchdog(0, trigger_ad, 0);     // channel of PA0 = 0, high limit, low limit
+  }
+  enable_awd(ADC1);   //  ADC1->regs->CR1 |= ADC_CR1_AWDEN;
+//  disable_awd(ADC2);  // to avoid ISR nesting
+//  if (ADC2->regs->DR > trigger_ad) {
+//    myADC2.setAnalogWatchdog(8, 4095, trigger_ad);  // channel of PB0 = 8, high limit, low limit
+//  } else {
+//    myADC2.setAnalogWatchdog(8, trigger_ad, 0);     // channel of PB0 = 8, high limit, low limit
+//  }
+//  enable_awd(ADC2);   //  
+//  ADC2->regs->CR1 |= ADC_CR1_JAWDEN | ADC_CR1_AWDIE;
+  prevTime = micros();
 	
 	if(lDelay < 0)	{
 
@@ -207,7 +268,7 @@ void startSampling(int16_t lDelay)	{
 			: 
 			: [keepSampling] "r" (keepSamplingPtr), [sIndex] "r" (sIndexPtr), [triggered] "r" (triggeredPtr), 
 				[ch1] "r" (ch1Capture), [ch2] "r" (ch2Capture), [dCH] "r" (bitStore), [lCtr] "r" (lCtr),
-				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES),
+				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES/2),
 				[snapMicros] "i" (snapMicros)
 			: "r0", "r1", "r9", "memory", "cc"
 		);		
@@ -269,7 +330,7 @@ void startSampling(int16_t lDelay)	{
 			: 
 			: [keepSampling] "r" (keepSamplingPtr), [sIndex] "r" (sIndexPtr), [triggered] "r" (triggeredPtr), 
 				[ch1] "r" (ch1Capture), [ch2] "r" (ch2Capture), [dCH] "r" (bitStore), [lCtr] "r" (lCtr),
-				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES),
+				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES/2),
 				[snapMicros] "i" (snapMicros)
 			: "r0", "r1", "r9", "memory", "cc"
 		);		
@@ -336,7 +397,7 @@ void startSampling(int16_t lDelay)	{
 			: 
 			: [keepSampling] "r" (keepSamplingPtr), [sIndex] "r" (sIndexPtr), [triggered] "r" (triggeredPtr), 
 				[ch1] "r" (ch1Capture), [ch2] "r" (ch2Capture), [dCH] "r" (bitStore), [lCtr] "r" (lCtr),
-				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES), [tDelay] "r" (lDelay),
+				[nSamp] "I" (NUM_SAMPLES), [halfSamples] "I" (NUM_SAMPLES/2), [tDelay] "r" (lDelay),
 				[snapMicros] "i" (snapMicros)
 			: "r0", "r1", "r9", "memory", "cc"
 		);		
@@ -451,7 +512,6 @@ bool findTrigger() {
   unsigned long auto_time;
   extern uint8_t triggerType;
 
-  int trigger_ad = getTriggerLevel() + 2048;
 //  Serial.println(trigger_ad);
   auto_time = 100;  // pow(10, rate / 3) + 5;
   unsigned long st = millis();
@@ -499,6 +559,6 @@ void adc_speed_fast(void) {
 
 void adc_speed_fastest(void) {
   adc_set_prescaler(ADC_PRE_PCLK2_DIV_2);
-  adc_set_sample_rate(PIN_MAP[PA0].adc_device,ADC_SMPR_1_5);
-  adc_set_sample_rate(PIN_MAP[PA1].adc_device,ADC_SMPR_1_5);
+  adc_set_sample_rate(PIN_MAP[PA0].adc_device,ADC_SMPR_7_5);
+  adc_set_sample_rate(PIN_MAP[PA1].adc_device,ADC_SMPR_7_5);
 }

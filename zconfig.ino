@@ -97,13 +97,13 @@ void loadDefaults()	{
 	setTriggerLevel(0);
 	
 	// set x in the middle
-	xCursor = 0;  // (NUM_SAMPLES - GRID_WIDTH)/2;
+	xCursor = (NUM_SAMPLES - GRID_WIDTH)/2;
  
 	// set y in the middle
-	yCursors[0] = -100;
-	yCursors[1] = -125;
-	yCursors[2] = -150;
-	yCursors[3] = -175;
+	yCursors[0] = -70;
+	yCursors[1] = -90;
+	yCursors[2] = -110;
+	yCursors[3] = -130;
 	
 	// show all waves
 	waves[0] = true;
@@ -126,37 +126,58 @@ void formatSaveConfig()	{
 	EEPROM.format();
 	DBG_PRINTLN("Saving all config params....");
 	
-	saveParameter(PARAM_PREAMBLE, PREAMBLE_VALUE);
+	saveParam(PARAM_PREAMBLE, PREAMBLE_VALUE);
+  SaveConfig();
+}
+
+void SaveConfig()  {
+	saveParam(PARAM_TIMEBASE, currentTimeBase);
+	saveParam(PARAM_TRIGDIR, triggerRising);
+	saveParam(PARAM_XCURSOR, xCursor);
+	saveParam(PARAM_YCURSOR, yCursors[0]);
+	saveParam(PARAM_YCURSOR + 1, yCursors[1]);
+	saveParam(PARAM_YCURSOR + 2, yCursors[2]);
+	saveParam(PARAM_YCURSOR + 3, yCursors[3]);
 	
-	saveParameter(PARAM_TIMEBASE, currentTimeBase);
-	saveParameter(PARAM_TRIGDIR, triggerRising);
-	saveParameter(PARAM_XCURSOR, xCursor);
-	saveParameter(PARAM_YCURSOR, yCursors[0]);
-	saveParameter(PARAM_YCURSOR + 1, yCursors[1]);
-	saveParameter(PARAM_YCURSOR + 2, yCursors[2]);
-	saveParameter(PARAM_YCURSOR + 3, yCursors[3]);
+	saveParam(PARAM_WAVES, waves[0]);
+	saveParam(PARAM_WAVES + 1, waves[1]);
+	saveParam(PARAM_WAVES + 2, waves[2]);
+	saveParam(PARAM_WAVES + 3, waves[3]);
 	
-	saveParameter(PARAM_WAVES, waves[0]);
-	saveParameter(PARAM_WAVES + 1, waves[1]);
-	saveParameter(PARAM_WAVES + 2, waves[2]);
-	saveParameter(PARAM_WAVES + 3, waves[3]);
+	saveParam(PARAM_TLEVEL, trigLevel);
+ 	saveParam(PARAM_STATS, printStats);
 	
-	saveParameter(PARAM_TLEVEL, trigLevel);
- 	saveParameter(PARAM_STATS, printStats);
-	
-	saveParameter(PARAM_ZERO1, zeroVoltageA1);
-	saveParameter(PARAM_ZERO2, zeroVoltageA2);
+	saveParam(PARAM_ZERO1, zeroVoltageA1);
+	saveParam(PARAM_ZERO2, zeroVoltageA2);
 }
 
 
 
 // ------------------------
-void saveParameter(uint16_t param, uint16_t data)	{
+void saveParam(uint16_t param, uint16_t data)	{
 // ------------------------
 	uint16 status = EEPROM.update(param, data);
 	if(status != EEPROM_OK && status != EEPROM_SAME_VALUE)	{
 		DBG_PRINT("Unable to save param in EEPROM, code: ");DBG_PRINTLN(status);
 	}
+}
+
+long savetimer = 0;
+
+void saveParameter(uint16_t param, uint16_t data)  {
+  savetimer = 60000;  // pend save for 1 minute
+}
+
+void commitSaveConfig() {
+  static unsigned long lasttime = millis();
+  if (savetimer > 0) {
+    savetimer -= millis() - lasttime;
+    if (savetimer <= 0) {
+      SaveConfig();
+      DBG_PRINTLN("commitSaveConfig");
+    }
+  }
+  lasttime = millis();
 }
 
 void eepromsetup(void) {
