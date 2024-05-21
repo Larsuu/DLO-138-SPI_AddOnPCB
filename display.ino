@@ -10,11 +10,20 @@
 
 #define GRID_COLOR		0x630c    //0x4208
 #define ADC_MAX_VAL		4096
-//#define ADC_2_GRID    8937    // 1v/div =1.0*4096*8/3.3*0.9
-#define ADC_2_GRID    4468    // 0.5v/div =0.5*4096*8/3.3*0.9
-//#define ADC_2_GRID    1787    // 0.2v/div
-//#define ADC_2_GRID    894     // 0.1v/div
+//#define ADC_2_GRID    4468    // 0.5v/div =0.5*4096*8/3.3*0.9
 
+const uint16_t voltageDiv[] = {
+  44684,  // 5v/div =5.0*4096*8/3.3*0.9
+  17873,  // 2v/div =2.0*4096*8/3.3*0.9
+  8937,   // 1v/div =1.0*4096*8/3.3*0.9
+  4468,   // 0.5v/div =0.5*4096*8/3.3*0.9
+  1787,   // 0.2v/div
+  894,    // 0.1v/div
+  447,    // 50mv/div
+  197,    // 20mv/div
+  89};    // 10mv/div
+
+uint16_t adc_2_grid1, adc_2_grid2;
 
 #define TFT_CS         PA15
 #define TFT_DC         PB10
@@ -45,7 +54,7 @@ boolean printStats = true;
 boolean paintLabels = false;
 
 // labels around the grid
-enum {L_timebase, L_triggerType, L_triggerEdge, L_triggerLevel, L_waves, L_window, L_vPos1, L_vPos2, L_vPos3, L_vPos4};
+enum {L_timebase, L_triggerType, L_triggerEdge, L_triggerLevel, L_waves, L_window, L_vPos1, L_vPos2, L_vPos3, L_vPos4, L_range1, L_range2};
 uint8_t currentFocus = L_timebase;
 
 
@@ -66,7 +75,10 @@ void focusNextLabel()	{
 	if((currentFocus == L_vPos4) && !waves[3])
 		currentFocus++;
 
-	if(currentFocus > L_vPos4)
+  if((currentFocus == L_range2) && !waves[1])
+    currentFocus++;
+
+	if(currentFocus > L_range2)
 		currentFocus = L_timebase;
 }
 
@@ -182,7 +194,14 @@ void clearNDrawSignals()	{
 // ------------------------
 	static boolean wavesOld[4] = {false,};
 	static int16_t yCursorsOld[4];
-	
+  static uint8_t rangePos1Old, rangePos2Old;
+
+  if (rangePos1 != rangePos1Old || rangePos2 != rangePos2Old)
+    clearWaves();
+  rangePos1Old = rangePos1;
+  rangePos2Old = rangePos2;
+  adc_2_grid1 = voltageDiv[rangePos1];
+  adc_2_grid2 = voltageDiv[rangePos2];
 	// snap the values to prevent interrupt from changing mid-draw
 	int16_t xCursorSnap = xCursor;
 	int16_t zeroVoltageA1Snap = zeroVoltageA1;
@@ -198,10 +217,12 @@ void clearNDrawSignals()	{
 	wavesSnap[2] = waves[2];
 	wavesSnap[3] = waves[3];
 
-  if (couplingPos == CPL_DC) {
+  if (couplingPos1 == CPL_DC) {
     zeroVoltageA1Snap = 0;
-    zeroVoltageA2Snap = 0;
     yCursorsSnap[0] = yCursors[0] + GRID_HEIGHT / 2;
+  }
+  if (couplingPos2 == CPL_DC) {
+    zeroVoltageA2Snap = 0;
     yCursorsSnap[1] = yCursors[1] + GRID_HEIGHT / 2;
   }
 
@@ -243,8 +264,8 @@ void clearNDrawSignals()	{
 		}
 			
 		if(wavesOld[1])	{
-			val1 = (ch2Old[i] * GRID_HEIGHT)/ADC_2_GRID;
-			val2 = (ch2Old[i + 1] * GRID_HEIGHT)/ADC_2_GRID;
+			val1 = (ch2Old[i] * GRID_HEIGHT)/adc_2_grid2;
+			val2 = (ch2Old[i + 1] * GRID_HEIGHT)/adc_2_grid2;
 			// clear the line segment
 			transposedPt1 = GRID_HEIGHT + vOffset + yCursorsOld[1] - val1;
 			transposedPt2 = GRID_HEIGHT + vOffset + yCursorsOld[1] - val2;
@@ -252,8 +273,8 @@ void clearNDrawSignals()	{
 		}
 
 		if(wavesOld[0])	{
-			val1 = (ch1Old[i] * GRID_HEIGHT)/ADC_2_GRID;
-			val2 = (ch1Old[i + 1] * GRID_HEIGHT)/ADC_2_GRID;
+			val1 = (ch1Old[i] * GRID_HEIGHT)/adc_2_grid1;
+			val2 = (ch1Old[i + 1] * GRID_HEIGHT)/adc_2_grid1;
 			// clear the line segment
 			transposedPt1 = GRID_HEIGHT + vOffset + yCursorsOld[0] - val1;
 			transposedPt2 = GRID_HEIGHT + vOffset + yCursorsOld[0] - val2;
@@ -286,8 +307,8 @@ void clearNDrawSignals()	{
 		}
 
 		if(wavesSnap[1])	{
-			val1 = ((ch2Capture[j] - zeroVoltageA2Snap) * GRID_HEIGHT)/ADC_2_GRID;
-			val2 = ((ch2Capture[jn] - zeroVoltageA2Snap) * GRID_HEIGHT)/ADC_2_GRID;
+			val1 = ((ch2Capture[j] - zeroVoltageA2Snap) * GRID_HEIGHT)/adc_2_grid2;
+			val2 = ((ch2Capture[jn] - zeroVoltageA2Snap) * GRID_HEIGHT)/adc_2_grid2;
 			ch2Old[i] = ch2Capture[j] - zeroVoltageA2Snap;
 			// draw the line segment
 			transposedPt1 = GRID_HEIGHT + vOffset + yCursorsSnap[1] - val1;
@@ -296,8 +317,8 @@ void clearNDrawSignals()	{
 		}
 		
 		if(wavesSnap[0])	{
-			val1 = ((ch1Capture[j] - zeroVoltageA1Snap) * GRID_HEIGHT)/ADC_2_GRID;
-			val2 = ((ch1Capture[jn] - zeroVoltageA1Snap) * GRID_HEIGHT)/ADC_2_GRID;
+			val1 = ((ch1Capture[j] - zeroVoltageA1Snap) * GRID_HEIGHT)/adc_2_grid1;
+			val2 = ((ch1Capture[jn] - zeroVoltageA1Snap) * GRID_HEIGHT)/adc_2_grid1;
 			ch1Old[i] = ch1Capture[j] - zeroVoltageA1Snap;
 			// draw the line segment
 			transposedPt1 = GRID_HEIGHT + vOffset + yCursorsSnap[0] - val1;
@@ -480,27 +501,39 @@ void drawLabels()	{
 
 	// print input switch pos
 	// -----------------
+  if(currentFocus == L_range1)
+    tft.drawRect(hOffset + 0, GRID_HEIGHT + vOffset + 1, 51, vOffset-1, ILI9341_WHITE);
   tft.setFont(&FreeSans9pt7b);
-	tft.setTextColor(ILI9341_YELLOW, ILI9341_BLACK);
-	tft.setCursor(hOffset + 0, GRID_HEIGHT + vOffset + 16);
-	tft.print(rngNames[rangePos]);
-	tft.setCursor(hOffset + 50, GRID_HEIGHT + vOffset + 16);
-	tft.print(cplNames[couplingPos]);
+	tft.setTextColor(AN_SIGNAL1, ILI9341_BLACK);
+	tft.setCursor(hOffset + 2, GRID_HEIGHT + vOffset + 16);
+	tft.print(rngNames[rangePos1]);
+	tft.setCursor(hOffset + 51, GRID_HEIGHT + vOffset + 16);
+	tft.print(cplNames[couplingPos1]);
+
+  if(waves[1])  {
+    if(currentFocus == L_range2)
+      tft.drawRect(hOffset + 80, GRID_HEIGHT + vOffset + 1, 51, vOffset-1, ILI9341_WHITE);
+    tft.setTextColor(AN_SIGNAL2, ILI9341_BLACK);
+    tft.setCursor(hOffset + 82, GRID_HEIGHT + vOffset + 16);
+    tft.print(rngNames[rangePos2]);
+    tft.setCursor(hOffset + 131, GRID_HEIGHT + vOffset + 16);
+    tft.print(cplNames[couplingPos2]);
+  }
 	
 	// print new timebase
 	// -----------------
 	tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-	tft.setCursor(130, GRID_HEIGHT + vOffset + 16);
+	tft.setCursor(170, GRID_HEIGHT + vOffset + 16);
 	if(currentFocus == L_timebase)
-		tft.drawRect(128, GRID_HEIGHT + vOffset + 1, 62, vOffset-1, ILI9341_WHITE);
+		tft.drawRect(168, GRID_HEIGHT + vOffset + 1, 62, vOffset-1, ILI9341_WHITE);
 	tft.print(getTimebaseLabel());
 
 	// print trigger type
 	// -----------------
 	tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
-	tft.setCursor(204, GRID_HEIGHT + vOffset + 16);
+	tft.setCursor(234, GRID_HEIGHT + vOffset + 16);
 	if(currentFocus == L_triggerType)
-		tft.drawRect(200, GRID_HEIGHT + vOffset + 1, 60, vOffset-1, ILI9341_WHITE);
+		tft.drawRect(230, GRID_HEIGHT + vOffset + 1, 60, vOffset-1, ILI9341_WHITE);
 
 	switch(triggerType)	{
 		case TRIGGER_AUTO:
@@ -517,9 +550,9 @@ void drawLabels()	{
 	// draw trigger edge
 	// -----------------
 	if(currentFocus == L_triggerEdge)
-		tft.drawRect(266, GRID_HEIGHT + vOffset + 1, 15, vOffset - 1, ILI9341_WHITE);
+		tft.drawRect(294, GRID_HEIGHT + vOffset + 1, 15, vOffset - 1, ILI9341_WHITE);
 
-	int trigX = 270;
+	int trigX = 298;
 	
 	if(triggerRising)	{
 		tft.drawFastHLine(trigX, TFT_HEIGHT - 3, 5, ILI9341_GREEN);
@@ -538,10 +571,10 @@ void drawLabels()	{
 	// draw trigger level on right side
 	// -----------------
   int cPos;
-  if (couplingPos == CPL_DC)
-    cPos = GRID_HEIGHT + vOffset + yCursors[0] + GRID_HEIGHT / 2 - ((getTriggerLevel()+2048)*GRID_HEIGHT)/ADC_2_GRID;
+  if (couplingPos1 == CPL_DC)
+    cPos = GRID_HEIGHT + vOffset + yCursors[0] + GRID_HEIGHT / 2 - ((getTriggerLevel()+2048)*GRID_HEIGHT)/adc_2_grid1;
   else
-    cPos = GRID_HEIGHT + vOffset + yCursors[0] - (getTriggerLevel()*GRID_HEIGHT)/ADC_2_GRID;
+    cPos = GRID_HEIGHT + vOffset + yCursors[0] - (getTriggerLevel()*GRID_HEIGHT)/adc_2_grid1;
     tft.fillTriangle(TFT_WIDTH, cPos - 5, TFT_WIDTH - hOffset, cPos, TFT_WIDTH, cPos + 5, AN_SIGNAL1);
 	if(currentFocus == L_triggerLevel)
 		tft.drawRect(GRID_WIDTH + hOffset, cPos - 7, hOffset, 14, ILI9341_WHITE);
@@ -702,16 +735,16 @@ void calculateStats()	{
 	wStats.cycle = avgCycleWidth/1000;
 	wStats.pulseValid = (avgCycleWidth != 0) && (wStats.avgPW != 0) && ((Vmax - Vmin) > 20);
 	
-	wStats.mvPos = (rangePos == RNG_50mV) || (rangePos == RNG_20mV) || (rangePos == RNG_10mV);
-	wStats.Vrmsf = sqrt(sumSquares/NUM_SAMPLES) * adcMultiplier[rangePos];
-  if (couplingPos == CPL_DC) {
-  wStats.Vavrf = (sumSamples/NUM_SAMPLES + zeroVoltageA1) * adcMultiplier[rangePos];
-  wStats.Vmaxf = (Vmax + zeroVoltageA1) * adcMultiplier[rangePos];
-  wStats.Vminf = (Vmin + zeroVoltageA1) * adcMultiplier[rangePos];
+	wStats.mvPos = (rangePos1 == RNG_50mV) || (rangePos1 == RNG_20mV) || (rangePos1 == RNG_10mV);
+	wStats.Vrmsf = sqrt(sumSquares/NUM_SAMPLES) * adcMultiplier[rangePos1];
+  if (couplingPos1 == CPL_DC) {
+  wStats.Vavrf = (sumSamples/NUM_SAMPLES + zeroVoltageA1) * adcMultiplier[rangePos1];
+  wStats.Vmaxf = (Vmax + zeroVoltageA1) * adcMultiplier[rangePos1];
+  wStats.Vminf = (Vmin + zeroVoltageA1) * adcMultiplier[rangePos1];
   } else {
-	wStats.Vavrf = sumSamples/NUM_SAMPLES * adcMultiplier[rangePos];
-	wStats.Vmaxf = Vmax * adcMultiplier[rangePos];
-	wStats.Vminf = Vmin * adcMultiplier[rangePos];
+	wStats.Vavrf = sumSamples/NUM_SAMPLES * adcMultiplier[rangePos1];
+	wStats.Vmaxf = Vmax * adcMultiplier[rangePos1];
+	wStats.Vminf = Vmin * adcMultiplier[rangePos1];
   }
 }
 

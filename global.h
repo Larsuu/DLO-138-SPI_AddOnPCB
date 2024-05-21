@@ -64,6 +64,8 @@
 #define PARAM_STATS		14
 #define PARAM_ZERO1		15
 #define PARAM_ZERO2		16
+#define PARAM_RANGE1  17
+#define PARAM_RANGE2  18
 
 #define LED_ON	digitalWrite(BOARD_LED, LOW)
 #define LED_OFF	digitalWrite(BOARD_LED, HIGH)

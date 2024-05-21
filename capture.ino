@@ -428,8 +428,8 @@ void dumpSamples()	{
 	DBG_PRINT("Per Sample (us): "); DBG_PRINTLN(timePerSample);
 	DBG_PRINT("Timebase: "); DBG_PRINT(getTimebaseLabel()); DBG_PRINTLN("/div");
 	DBG_PRINT("Actual Timebase (us): "); DBG_PRINTLN(timePerSample * 25);
-	DBG_PRINT("CH1 Coupling: "); DBG_PRINT(cplNames[couplingPos]); DBG_PRINT(", Range: "); DBG_PRINT(rngNames[rangePos]); DBG_PRINTLN("/div");
-	DBG_PRINTLN("CH2 Coupling: --, Range: +-2048");
+	DBG_PRINT("CH1 Coupling: "); DBG_PRINT(cplNames[couplingPos1]); DBG_PRINT(", Range: "); DBG_PRINT(rngNames[rangePos1]); DBG_PRINTLN("/div");
+	DBG_PRINT("CH2 Coupling: "); DBG_PRINT(cplNames[couplingPos2]); DBG_PRINTLN(", Range: +-2048");
 
 	DBG_PRINT("Triggered: "); 
 	if(triggered)	{
@@ -491,7 +491,7 @@ void printSample(uint16_t k, float timeStamp) {
 // ------------------------
 	DBG_PRINT(timeStamp);
 	DBG_PRINT("\t");
-	DBG_PRINT((ch1Capture[k] - zeroVoltageA1) * adcMultiplier[rangePos]);
+	DBG_PRINT((ch1Capture[k] - zeroVoltageA1) * adcMultiplier[rangePos1]);
 	DBG_PRINT("\t");
 	DBG_PRINT(ch2Capture[k] - zeroVoltageA2);
 	DBG_PRINT("\t");

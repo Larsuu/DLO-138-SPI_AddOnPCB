@@ -128,36 +128,41 @@ void setTriggerLevel(int16_t tLvl)	{
 // ------------------------
 void readInpSwitches()	{
 // ------------------------
-	static uint8_t couplingOld, rangeOld;
+	static uint8_t couplingOld1, couplingOld2, rangeOld;
 
 	uint16_t cpl, pos1, pos2;
 	adc_reg_map *ADC1regs = ADC1->regs;
 
 	// check AC/DC switch 1 
   if (digitalRead(AC_CH1) == LOW) {
-    couplingPos = CPL_AC;
+    couplingPos1 = CPL_AC;
     digitalWrite(OF_CH1, HIGH);
   } else {
-    couplingPos = CPL_DC;
+    couplingPos1 = CPL_DC;
     digitalWrite(OF_CH1, LOW);
   }
   // check AC/DC switch 2 
   if (digitalRead(AC_CH2) == LOW) {
+    couplingPos2 = CPL_AC;
     digitalWrite(OF_CH2, HIGH);
   } else {
+    couplingPos2 = CPL_DC;
     digitalWrite(OF_CH2, LOW);
   }
 	
-	rangePos = RNG_0_5V;
 	
 	// check if switch position changed from previous snap
-	if(couplingPos != couplingOld)	{
-		couplingOld = couplingPos;
+	if(couplingPos1 != couplingOld1)	{
+		couplingOld1 = couplingPos1;
 		repaintLabels();
 	}
+  if(couplingPos2 != couplingOld2)  {
+    couplingOld2 = couplingPos2;
+    repaintLabels();
+  }
 	
-	if(rangePos != rangeOld)	{
-		rangeOld = rangePos;
+	if(rangePos1 != rangeOld)	{
+		rangeOld = rangePos1;
 		repaintLabels();
 	}
 }

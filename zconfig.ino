@@ -68,6 +68,10 @@ void loadConfig(boolean reset)	{
 	zeroVoltageA1 = EEPROM.read(PARAM_ZERO1);
 	zeroVoltageA2 = EEPROM.read(PARAM_ZERO2);
 	
+	rangePos1 = EEPROM.read(PARAM_RANGE1);
+	rangePos2 = EEPROM.read(PARAM_RANGE2);
+  if (rangePos1 > RNG_10mV) rangePos1 = RNG_1V;
+  if (rangePos2 > RNG_10mV) rangePos2 = RNG_1V;
 	
 	DBG_PRINTLN("Loaded config:");
 	DBG_PRINT("Timebase: ");DBG_PRINTLN(currentTimeBase);
@@ -80,6 +84,8 @@ void loadConfig(boolean reset)	{
 	DBG_PRINT("Print Stats: ");DBG_PRINTLN(printStats);
 	DBG_PRINT("Wave1 Zero: ");DBG_PRINTLN(zeroVoltageA1);
 	DBG_PRINT("Wave2 Zero: ");DBG_PRINTLN(zeroVoltageA2);
+	DBG_PRINT("Range1: ");DBG_PRINTLN(rngNames[rangePos1]);
+	DBG_PRINT("Range2: ");DBG_PRINTLN(rngNames[rangePos2]);
 	
 	// check if EEPROM left enough space, or else invoke formatSaveConfig
 }
@@ -115,6 +121,9 @@ void loadDefaults()	{
 	
 	zeroVoltageA1 = 2048;
 	zeroVoltageA2 = 2048;
+
+	rangePos1 = RNG_0_5V;
+	rangePos2 = RNG_0_5V;
 }
 
 
@@ -149,6 +158,9 @@ void SaveConfig()  {
 	
 	saveParam(PARAM_ZERO1, zeroVoltageA1);
 	saveParam(PARAM_ZERO2, zeroVoltageA2);
+
+	saveParam(PARAM_RANGE1, rangePos1);
+	saveParam(PARAM_RANGE2, rangePos2);
 }
 
 

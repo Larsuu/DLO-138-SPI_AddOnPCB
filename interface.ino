@@ -132,7 +132,7 @@ void resetParam()	{
 void calculateTraceZero(int waveID)		{
 // ------------------------
 	// calculate zero only if switch is in GND position
-	if(couplingPos != CPL_GND)
+	if(couplingPos1 != CPL_GND)
 		return;
 
 	if(waveID > 1)
@@ -197,6 +197,12 @@ void encoderChanged(int steps)	{
 		case L_vPos4:
 			if(steps > 0) changeYCursor(3, yCursors[3] - YCURSOR_STEP); else changeYCursor(3, yCursors[3] + YCURSOR_STEP);
 			break;
+    case L_range1:
+      if(steps > 0) incrementRange1(); else decrementRange1();
+      break;
+    case L_range2:
+      if(steps > 0) incrementRange2(); else decrementRange2();
+      break;
 	}
 	
 	// manually update display if frozen
@@ -406,4 +412,51 @@ void changeXCursor(int16_t xPos)	{
 	xCursor = xPos;
 	saveParameter(PARAM_XCURSOR, xCursor);
 	repaintLabels();
+}
+
+
+
+
+// ------------------------
+void incrementRange1()  {
+// ------------------------
+  if(rangePos1 == RNG_10mV)
+    return;
+  ++rangePos1;
+  saveParameter(PARAM_RANGE1, rangePos1);
+  // request repainting of screen labels
+  repaintLabels();
+}
+
+// ------------------------
+void decrementRange1()  {
+// ------------------------
+  if(rangePos1 == RNG_5V)
+    return;
+  --rangePos1;
+  saveParameter(PARAM_RANGE1, rangePos1);
+  // request repainting of screen labels
+  repaintLabels();
+}
+
+// ------------------------
+void incrementRange2()  {
+// ------------------------
+  if(rangePos2 == RNG_10mV)
+    return;
+  ++rangePos2;
+  saveParameter(PARAM_RANGE2, rangePos2);
+  // request repainting of screen labels
+  repaintLabels();
+}
+
+// ------------------------
+void decrementRange2()  {
+// ------------------------
+  if(rangePos2 == RNG_5V)
+    return;
+  --rangePos2;
+  saveParameter(PARAM_RANGE2, rangePos2);
+  // request repainting of screen labels
+  repaintLabels();
 }

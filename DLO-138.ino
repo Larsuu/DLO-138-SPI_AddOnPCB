@@ -13,7 +13,7 @@
 STM32ADC myADC1(ADC1), myADC2(ADC2); 
 
 
-#define FIRMWARE_VERSION	"1.10"
+#define FIRMWARE_VERSION	"1.11"
 
 // ------------------------
 void setup()	{
