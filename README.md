@@ -17,11 +17,10 @@ This firmware can NOT be used on stock DSO-138 hardware. We can build the hardwa
 # Cost
 You need not to have the DSO-138. Instead you can build the hardware on the breadboard or create original PCB. In the case of DLO-138, it is the loss of lowest timebase. Maximum sampling rate in DLO-138 is 20 µs/div instead of 10 µs/div. In the 20 µs/div range, firmware under-samples ADC channels, often reading same data twice. To use the second analog channel, analog front end has to be duplicated. This firmware can be used to provide two digital logic channels.
 
-In the case of DLO-138-SPI, the frontend input circuit is simplified for ease of build. It can't accept negative voltage, and the voltage range is fixed to 0.5V/div only. AC mode is not implemented yet.
+In the case of DLO-138-SPI, the frontend input circuit is simplified for ease of build. It can't accept negative voltage. Voltage range is now 5v/div to 10mV/div that is calculated from 12bit ADC value. AC mode is implemented with imaginary ground offset.
 Furthermore, a comparator for trigger detection have been omitted. Instead it uses the analog watchdog function of the ADC for pre-trigger capability.
 However the interrupt process takes cirtain amount of time at every crossing of the trigger level umtil actual trigger point.
-So in the scan range faster than 0.1ms/div, it looses some samples at every crossing of the trigger level.
-This is not the case after the trigger point. 
+So in the scan range faster than 0.1ms/div, it looses some samples at every crossing of the trigger level. This is not the case after the trigger point. 
 
 # Build
 The build environment uses Arduino IDE 1.8.19. For help with setting up IDE visit http://www.stm32duino.com<br>
