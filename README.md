@@ -7,10 +7,11 @@ https://github.com/siliconvalley4066/DLO-138-SPI
 Introduction to Extending the DSO138 Oscilloscope DIY Kit
 
 The DSO138 DIY oscilloscope is a popular, affordable kit for electronics beginners. This project aims to enhance it into a portable mobile oscilloscope while keeping it newbie-friendly, cheap, and modular for future upgrades. By adding simple extensions, we can maintain the spirit of the original kit while improving its functionality.
+
 Main Goal for This Project:
 
-    Add a second analog channel as an addon.
-    Integrate a battery holder for portable, battery-powered operation.
+    - Add a second analog channel as an addon.
+    - Integrate a battery holder for portable, battery-powered operation.
 
 Requirements:
 
