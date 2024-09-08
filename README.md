@@ -39,7 +39,7 @@ Here are some ideas that could significantly enhance the oscilloscope's function
     - Improved Display Options: Larger or external display support (hard)
     - Signal Storage: Add SD card slot for waveform saving. (hard)
     - USB/PC Connectivity: Enable USB data transfer for real-time monitoring on a PC. (done? partially?)
-    - Wi-Fi/BT Connectivity: Integrate a ESP32 module for remote control and data transfer. (medium/hard) -> (Serial Data Bridge)
+    - Wi-Fi/BT Connectivity: Integrate a nRF24L01 module for remote control and data transfer. (medium/hard) -> (Serial Data Bridge)
     - Function Generator: Add XR2206 1Hz-1MHz function signal generator (Sine/Triangle/Square output) with adjustable frequency and amplitude. (Easy)
     - Adjustable Power Source: Add a 5A 75W adjustable step-down converter module for powering external circuits during testing. (Easy)
 
